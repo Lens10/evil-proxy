@@ -295,7 +295,7 @@ class QuickCert
       key_usage << "nonRepudiation" << "digitalSignature" << "keyEncipherment"
       ext_key_usage << "clientAuth" << "emailProtection"
     else
-      raise "unknonw cert type \"#{cert_config[:type]}\""
+      raise "unknown cert type \"#{cert_config[:type]}\""
     end
 
     ef = OpenSSL::X509::ExtensionFactory.new
@@ -306,6 +306,7 @@ class QuickCert
     ex << ef.create_extension("nsComment",
                               "Ruby/OpenSSL Generated Certificate")
     ex << ef.create_extension("subjectKeyIdentifier", "hash")
+    ex << ef.create_extension("subjectAltName", "DNS.1: #{cert_config[:hostname]}")
     #ex << ef.create_extension("nsCertType", "client,email")
     unless key_usage.empty? then
       ex << ef.create_extension("keyUsage", key_usage.join(","))
@@ -327,7 +328,7 @@ class QuickCert
                                 "OCSP;" << @ca_config[:ocsp_location])
     end
     cert.extensions = ex
-    cert.sign(ca_keypair, OpenSSL::Digest::SHA1.new)
+    cert.sign(ca_keypair, OpenSSL::Digest::SHA512.new)
 
     backup_cert_file = @ca_config[:new_certs_dir] + "/cert_#{cert.serial}.pem"
     puts "Writing backup cert to #{backup_cert_file}" if $DEBUG
