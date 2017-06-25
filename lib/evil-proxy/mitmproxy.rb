@@ -19,14 +19,15 @@ class EvilProxy::MITMProxyServer < EvilProxy::HTTPProxyServer
     ca_config[:hostname] = 'ca'
     ca_config[:domainname] = 'mitm.proxy'
     ca_config[:password] = 'password'
-    ca_config[:CA_dir] ||= File.join(Dir.pwd, "certs/CA")
+    ca_config[:cert_dir] ||= File.join(Dir.pwd, "certs")
 
-    ca_config[:keypair_file] ||= File.join ca_config[:CA_dir], "private/cakeypair.pem"
-    ca_config[:cert_file] ||= File.join ca_config[:CA_dir], "cacert.pem"
-    ca_config[:serial_file] ||= File.join ca_config[:CA_dir], "serial"
-    ca_config[:new_certs_dir] ||= File.join ca_config[:CA_dir], "newcerts"
-    ca_config[:new_keypair_dir] ||= File.join ca_config[:CA_dir], "private/keypair_backup"
-    ca_config[:crl_dir] ||= File.join ca_config[:CA_dir], "crl"
+    ca_config[:ca_dir]            ||= File.join ca_config[:cert_dir], "CA"
+    ca_config[:keypair_file]      ||= File.join ca_config[:ca_dir], "private/cakeypair.pem"
+    ca_config[:cert_file]         ||= File.join ca_config[:ca_dir], "cacert.pem"
+    ca_config[:serial_file]       ||= File.join ca_config[:ca_dir], "serial"
+    ca_config[:new_certs_dir]     ||= File.join ca_config[:ca_dir], "newcerts"
+    ca_config[:new_keypair_dir]   ||= File.join ca_config[:ca_dir], "private/keypair_backup"
+    ca_config[:crl_dir]           ||= File.join ca_config[:ca_dir], "crl"
 
     ca_config[:ca_cert_days] ||= 5 * 365 # five years
     ca_config[:ca_rsa_key_length] ||= 2048

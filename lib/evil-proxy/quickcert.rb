@@ -20,7 +20,7 @@ require 'openssl'
 #
 #   CA[:hostname] = hostname
 #   CA[:domainname] = domainname
-#   CA[:CA_dir] = File.join Dir.pwd, "CA"
+#   CA[:ca_dir] = File.join Dir.pwd, "CA"
 #   CA[:password] = '1234'
 #
 #   CERTS << {
@@ -57,17 +57,16 @@ class QuickCert
   # QuickCert Version
 
   VERSION = "1.0.2"
-  CERT_DIR = File.join(Dir.pwd, "certs")
-  Dir.mkdir(CERT_DIR) unless File.exists?(CERT_DIR)
 
   ##
   # Creates a new QuickCert instance using the Certificate
   # Authority described in +ca_config+.  If there is no CA at
-  # ca_config[:CA_dir], then QuickCert will initialize a new one.
+  # ca_config[:ca_dir], then QuickCert will initialize a new one.
 
   def initialize(ca_config)
     @ca_config = ca_config
 
+    Dir.mkdir @ca_config[:cert_dir] unless File.exists? @ca_config[:cert_dir]
     create_ca
   end
 
@@ -77,8 +76,8 @@ class QuickCert
 
   def create_cert(cert_config)
     dest = cert_config[:hostname] || cert_config[:user]
-    key_file = "#{CERT_DIR}/#{dest}/#{dest}_keypair.pem"
-    cert_file = "#{CERT_DIR}/#{dest}/cert_#{dest}.pem"
+    key_file = "#{@ca_config[:cert_dir]}/#{dest}/#{dest}_keypair.pem"
+    cert_file = "#{@ca_config[:cert_dir]}/#{dest}/cert_#{dest}.pem"
     if File.exists?(cert_file) && File.exists?(key_file)
       key = OpenSSL::PKey::RSA.new(File.read(key_file))
       cert = OpenSSL::X509::Certificate.new(File.read(cert_file))
@@ -92,16 +91,16 @@ class QuickCert
 
   ##
   # Creates a new Certificate Authority from @ca_config if it
-  # does not already exist at ca_config[:CA_dir].
+  # does not already exist at ca_config[:ca_dir].
 
   def create_ca
-    return if File.exists? @ca_config[:CA_dir]
+    return if File.exists? @ca_config[:ca_dir]
 
-    Dir.mkdir @ca_config[:CA_dir]
+    Dir.mkdir @ca_config[:ca_dir]
 
-    Dir.mkdir File.join(@ca_config[:CA_dir], 'private'), 0700
-    Dir.mkdir File.join(@ca_config[:CA_dir], 'newcerts')
-    Dir.mkdir File.join(@ca_config[:CA_dir], 'crl')
+    Dir.mkdir File.join(@ca_config[:ca_dir], 'private'), 0700
+    Dir.mkdir File.join(@ca_config[:ca_dir], 'newcerts')
+    Dir.mkdir File.join(@ca_config[:ca_dir], 'crl')
 
     File.open @ca_config[:serial_file], 'w' do |f| f << "#{Time.now.to_i}" end
 
@@ -150,13 +149,13 @@ class QuickCert
 
   def create_key(cert_config)
     dest = cert_config[:hostname] || cert_config[:user]
-    keypair_file = "#{CERT_DIR}/#{dest}/#{dest}_keypair.pem"
+    keypair_file = "#{@ca_config[:cert_dir]}/#{dest}/#{dest}_keypair.pem"
     if File.exists?(keypair_file)
       keypair = OpenSSL::PKey::RSA.new(File.read(keypair_file),
                                        cert_config[:password])
       return keypair_file, keypair
     end
-    Dir.mkdir("#{CERT_DIR}/#{dest}", 0700) unless File.exists?("#{CERT_DIR}/#{dest}")
+    Dir.mkdir("#{@ca_config[:cert_dir]}/#{dest}", 0700) unless File.exists?("#{@ca_config[:cert_dir]}/#{dest}")
 
     puts "Generating RSA keypair" if $DEBUG
     keypair = OpenSSL::PKey::RSA.new 1024
@@ -185,7 +184,7 @@ class QuickCert
   def create_csr(cert_config, keypair_file = nil)
     keypair = nil
     dest = cert_config[:hostname] || cert_config[:user]
-    csr_file = "#{CERT_DIR}/#{dest}/csr_#{dest}.pem"
+    csr_file = "#{@ca_config[:cert_dir]}/#{dest}/csr_#{dest}.pem"
 
     name = @ca_config[:name].dup
     case cert_config[:type]
@@ -338,7 +337,7 @@ class QuickCert
 
     # Write cert
     dest = cert_config[:hostname] || cert_config[:user]
-    cert_file = "#{CERT_DIR}/#{dest}/cert_#{dest}.pem"
+    cert_file = "#{@ca_config[:cert_dir]}/#{dest}/cert_#{dest}.pem"
     puts "Writing cert to #{cert_file}" if $DEBUG
     File.open cert_file, "w", 0644 do |f|
       f << cert.to_pem
