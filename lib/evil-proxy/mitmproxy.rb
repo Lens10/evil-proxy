@@ -11,6 +11,15 @@ class EvilProxy::MITMProxyServer < EvilProxy::HTTPProxyServer
     @mitm_port = 4433
   end
 
+  def shutdown
+    @mitm_servers.each do |host, mitm|
+      mitm.shutdown
+      logger.info "Stopping mitm server for #{host}"
+    end
+    @mitm_servers = []
+    super
+  end
+
   def ca
     return @ca if @ca
     logger.info "Create CA root cert"
